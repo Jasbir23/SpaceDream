@@ -133,22 +133,6 @@ function addUserShip(currentRot, currentPos, userName){
 				verMove: value.verMove,
 				speed: value.speed
 			}
-			firebase
-			.database()
-			.ref("users/" + userName + "/currentRot/")
-			.set({
-				x: userShipMeshArray[pointer].rotation.x,
-				y: userShipMeshArray[pointer].rotation.y,
-				z: userShipMeshArray[pointer].rotation.z
-			});
-			firebase
-			.database()
-			.ref("users/" + userName + "/currentPos/")
-			.set({
-				x: userShipMeshArray[pointer].position.x,
-				y: userShipMeshArray[pointer].position.y,
-				z: userShipMeshArray[pointer].position.z
-			});
 		}
 	});
 }
