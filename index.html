@@ -3,7 +3,7 @@
 <html>
 	<head>
 		<meta charset=utf-8>
-		<title>My first three.js app</title>
+		<title>SpaceDream</title>
 		<style>
 			body { margin: 0 }
 			canvas { width: 100%; height: 100% }
@@ -89,45 +89,48 @@ function adjustUserShips(){
 }
 }
 
-function addUserShip(currentRot, currentPos, userName){
-	console.log(userName);
-	usersOnlineArray.push(userName);
+function addUserShip(currentRot, currentPos, otherUserName){
+	usersOnlineArray.push(otherUserName);
+	document.getElementById("userName").innerHTML = userName + "  Online : " + usersOnlineArray.length;
 	let userMesh = new THREE.Mesh();
-	var mtlLoader = new THREE.MTLLoader();
-	mtlLoader.setPath("ship/");
-	mtlLoader.load("Wraith_Raider_Starship.mtl", function(materials) {
-		materials.preload();
-		var objLoader = new THREE.OBJLoader();
-		objLoader.setMaterials(materials);
-		objLoader.setPath("ship/");
-		objLoader.load("ship.obj", function(object) {
-			userMesh.add(object);
-			usersShipObjects.push(object);
-			userMesh.rotation.x = currentRot.x;
-			userMesh.rotation.y = currentRot.y;
-			userMesh.rotation.z = currentRot.z;
-			userMesh.position.x = currentPos.x;
-			userMesh.position.y = currentPos.y;
-			userMesh.position.z = currentPos.z;
-			object.scale.x = 0.02;
-			object.scale.y = 0.02;
-			object.scale.z = 0.02;
-			object.position.z = 0.7;
-			object.position.y = -0.2;
-			object.rotation.y = 135.1;
-			object.rotation.x = 0.2;
-			userShipMeshArray.push(userMesh);
-			scene.add(userMesh);
-		});
+
+	THREEx.SpaceShips.loadSpaceFighter02(function(object) {
+		userMesh.add(object);
+		usersShipObjects.push(object);
+		userMesh.rotation.x = currentRot.x;
+		userMesh.rotation.y = currentRot.y;
+		userMesh.rotation.z = currentRot.z;
+		userMesh.position.x = currentPos.x;
+		userMesh.position.y = currentPos.y;
+		userMesh.position.z = currentPos.z;
+		object.scale.x = 0.02;
+		object.scale.y = 0.02;
+		object.scale.z = 0.02;
+		  var userLight = new THREE.SphereGeometry(0.5, 32, 32);
+			let randColor = getRandomColor();
+		  userLightMat = new THREE.MeshStandardMaterial({
+		    emissive: randColor,
+		    emissiveIntensity: 1,
+		    color: randColor
+		  });
+		  let userLightMesh = new THREE.Mesh(userLight, userLightMat);
+		  let userPtLight = new THREE.PointLight(randColor, 1, 0);
+			userPtLight.castShadow = true;
+			userLightMesh.position.y = 3;
+			userLightMesh.add(userPtLight);
+			userMesh.add(userLightMesh);
+		object.rotation.y = Math.PI;
+		userShipMeshArray.push(userMesh);
+		scene.add(userMesh);
 	});
 	// attach listener for the object movement
 	firebase
   .database()
-  .ref("users/"+ userName)
+  .ref("users/"+ otherUserName)
   .on("value", snapshot => {
 		if(snapshot !== undefined){
 			let value = snapshot.val();
-			let pointer = usersOnlineArray.indexOf(userName);
+			let pointer = usersOnlineArray.indexOf(otherUserName);
 			usersMoveArray[pointer] = {
 				horMove : value.horMove,
 				verMove: value.verMove,
@@ -137,8 +140,17 @@ function addUserShip(currentRot, currentPos, userName){
 	});
 }
 
-function removeUserShip(userName){
-	let pointer = usersOnlineArray.indexOf(userName);
+function getRandomColor() {
+  var letters = '0123456789ABCDEF';
+  var color = '#';
+  for (var i = 0; i < 6; i++) {
+    color += letters[Math.floor(Math.random() * 16)];
+  }
+  return color;
+}
+
+function removeUserShip(otherUserName){
+	let pointer = usersOnlineArray.indexOf(otherUserName);
 	scene.remove(userShipMeshArray[pointer]);
 	userShipMeshArray.splice(pointer,1);
 	usersMoveArray.splice(pointer,1);
@@ -146,8 +158,9 @@ function removeUserShip(userName){
 	usersShipObjects.splice(pointer,1);
 	firebase
   .database()
-  .ref("users/"+ userName)
+  .ref("users/"+ otherUserName)
   .off();
+	document.getElementById("userName").innerHTML = userName + "  Online : " + usersOnlineArray.length;
 }
 
 function renderOtherOnlineUsers(){
@@ -242,6 +255,20 @@ function addHeroShip(){
       objLoader.load("ship.obj", function(object) {
         heroObj = object;
         objMesh.add(object);
+				var userLight = new THREE.SphereGeometry(0.04, 32, 32);
+				let randColor = getRandomColor();
+			  userLightMat = new THREE.MeshStandardMaterial({
+			    emissive: randColor,
+			    emissiveIntensity: 1,
+			    color: randColor
+			  });
+			  let userLightMesh = new THREE.Mesh(userLight, userLightMat);
+			  let userPtLight = new THREE.PointLight(randColor, 1, 0);
+				userPtLight.castShadow = true;
+				userLightMesh.position.z = 0.8;
+				userLightMesh.position.y = 0.2;
+				userLightMesh.add(userPtLight);
+				objMesh.add(userLightMesh);
         object.scale.x = 0.001;
         object.scale.y = 0.001;
         object.scale.z = 0.001;
@@ -350,7 +377,7 @@ var animate = function() {
 };
 function addMainStar() {
   var starGeometry = new THREE.SphereGeometry(20, 32, 32);
-  let starLight = new THREE.PointLight(0xffee88, 3, 0);
+  let starLight = new THREE.PointLight(0xffee88, 1, 0);
   starMat = new THREE.MeshStandardMaterial({
     emissive: 0xffffee,
     emissiveIntensity: 1,
