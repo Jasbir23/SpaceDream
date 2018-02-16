@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset=utf-8>
+		<title>My first three.js app</title>
+		<style>
+			body { margin: 0 }
+			canvas { width: 100%; height: 100% }
+		</style>
+	</head>
+	<body>
+		<script src="js/three.js"></script>
+    <script src="js/OBJLoader.js"></script>
+		<script src="js/MTLLoader.js"></script>
+		<script src="js/OrbitControls.js"></script>
+			<script src='js/threex.planets.js'></script>
+		<script>
+		// Our Javascript will go here.
+var scene = new THREE.Scene();
+let ship = 0;
+var horMove = 0;
+var verMove = 0;
+var heroObj;
+moveForward = false;
+var camera = new THREE.PerspectiveCamera(
+  75,
+  window.innerWidth / window.innerHeight,
+  0.1,
+  500
+);
+var astMesh = new THREE.Mesh();
+var uraMesh = new THREE.Mesh();
+var satMesh = new THREE.Mesh();
+var merMesh = new THREE.Mesh();
+var venMesh = new THREE.Mesh();
+var objMesh = new THREE.Mesh();
+objMesh.add(camera);
+var starMesh;
+var starTrekMesh = new THREE.Mesh();
+var earthMesh = new THREE.Mesh();
+var nepMesh = new THREE.Mesh();
+addUniverse();
+addMainStar();
+addPlanets();
+addAsteroids();
+addStarTrekShip();
+addHeroShip();
+
+var renderer = new THREE.WebGLRenderer();
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+// scene.add(camera);
+
+camera.position.z = 1.5;
+camera.position.y = 0;
+// var orbitControl = new THREE.OrbitControls(camera, renderer.domElement); //helper to rotate around in scene
+
+function addUniverse() {
+  var universeSphere = new THREE.SphereGeometry(500, 32, 32);
+  var uniTexture = THREE.ImageUtils.loadTexture(
+    "./images/galaxy_starfield.png"
+  );
+  uniTexture.wrapS = uniTexture.wrapT = THREE.RepeatWrapping;
+  uniTexture.magFilter = THREE.NearestFilter;
+  uniTexture.minFilter = THREE.LinearMipMapLinearFilter;
+  uniTexture.repeat.set(2, 2);
+  var uniMaterial = new THREE.MeshBasicMaterial({
+    map: uniTexture,
+    side: THREE.DoubleSide
+  });
+  var uniMesh = new THREE.Mesh(universeSphere, uniMaterial);
+  scene.add(uniMesh);
+}
+function adjustHeroShip() {
+  let dirVec = new THREE.Vector3(0, 0, -1);
+  var direc = dirVec.applyQuaternion(objMesh.quaternion);
+  if (horMove === -1) {
+    rotObjectMatrix = new THREE.Matrix4();
+    rotObjectMatrix.makeRotationY(0.01);
+    objMesh.matrix.multiply(rotObjectMatrix);
+    objMesh.rotation.setFromRotationMatrix(objMesh.matrix);
+  }
+  if (horMove === 1) {
+    rotObjectMatrix = new THREE.Matrix4();
+    rotObjectMatrix.makeRotationY(-0.01);
+    objMesh.matrix.multiply(rotObjectMatrix);
+    objMesh.rotation.setFromRotationMatrix(objMesh.matrix);
+  }
+  if (verMove === -1) {
+    rotObjectMatrix = new THREE.Matrix4();
+    rotObjectMatrix.makeRotationX(0.01);
+    // heroObj.rotation.x -= 0.05;
+    objMesh.matrix.multiply(rotObjectMatrix);
+    objMesh.rotation.setFromRotationMatrix(objMesh.matrix);
+  }
+  if (verMove === 1) {
+    rotObjectMatrix = new THREE.Matrix4();
+    rotObjectMatrix.makeRotationX(-0.01);
+    // heroObj.rotation.x += 0.05;
+    objMesh.matrix.multiply(rotObjectMatrix);
+    objMesh.rotation.setFromRotationMatrix(objMesh.matrix);
+  }
+  if (moveForward) {
+    objMesh.position.x += 0.2 * direc.x;
+    objMesh.position.y += 0.2 * direc.y;
+    objMesh.position.z += 0.2 * direc.z;
+  }
+}
+var animate = function() {
+  requestAnimationFrame(animate);
+  astMesh.rotation.y += 0.005;
+  astMesh.rotation.x += 0.001;
+  starTrekMesh.rotation.y -= 0.005;
+  satMesh.rotation.y += 0.005;
+  satMesh.rotation.x += 0.005;
+  merMesh.rotation.y += 0.005;
+  merMesh.rotation.x += 0.005;
+  uraMesh.rotation.y += 0.03;
+  uraMesh.rotation.x += 0.03;
+  earthMesh.rotation.y += 0.008;
+  earthMesh.rotation.x += 0.008;
+
+  venMesh.rotation.y += 0.008;
+  venMesh.rotation.x += 0.008;
+  nepMesh.rotation.y += 0.012;
+  nepMesh.rotation.x += 0.012;
+  adjustHeroShip();
+  renderer.render(scene, camera);
+};
+function addMainStar() {
+  var starGeometry = new THREE.SphereGeometry(20, 32, 32);
+  let starLight = new THREE.PointLight(0xffee88, 3, 0);
+  starMat = new THREE.MeshStandardMaterial({
+    emissive: 0xffffee,
+    emissiveIntensity: 1,
+    color: 0x0064000
+  });
+  starMesh = new THREE.Mesh(starGeometry, starMat);
+  starMesh.add(starLight);
+  starMesh.position.set(0, 0, 0);
+  starLight.castShadow = true;
+  scene.add(starMesh);
+}
+function addPlanets() {
+  var uranus = THREEx.Planets.createUranus();
+  uranus.scale.x = 0.005;
+  uranus.scale.y = 0.005;
+  uranus.scale.z = 0.005;
+  var saturn = THREEx.Planets.createSaturn();
+  saturn.scale.x = 0.005;
+  saturn.scale.y = 0.005;
+  saturn.scale.z = 0.005;
+  var earth = THREEx.Planets.createEarth();
+  earth.scale.x = 0.03;
+  earth.scale.y = 0.03;
+  earth.scale.z = 0.03;
+  var neptune = THREEx.Planets.createNeptune();
+  var mercury = THREEx.Planets.createMercury();
+  var venus = THREEx.Planets.createVenus();
+  venus.scale.x = 10;
+  venus.scale.y = 10;
+  venus.scale.z = 10;
+  mercury.scale.x = 30;
+  mercury.scale.y = 30;
+  mercury.scale.z = 30;
+  merMesh.add(mercury);
+  neptune.scale.x = 30;
+  neptune.scale.y = 30;
+  neptune.scale.z = 30;
+  saturn.position.x = 50;
+  saturn.position.y = 50;
+  saturn.position.z = 50;
+  uranus.position.y = 30;
+  uranus.position.x = -30;
+  uranus.position.z = 30;
+  earth.position.y = 70;
+  earth.position.x = -70;
+  earth.position.z = -70;
+  venus.position.y = -85;
+  venus.position.x = -85;
+  venus.position.z = 85;
+  neptune.position.y = -100;
+  neptune.position.x = 100;
+  neptune.position.z = -100;
+
+  mercury.position.y = -60;
+  mercury.position.x = 60;
+  mercury.position.z = -60;
+  nepMesh.add(neptune);
+  venMesh.add(venus);
+  scene.add(venMesh);
+  earthMesh.add(earth);
+  uraMesh.add(uranus);
+  satMesh.add(saturn);
+  scene.add(earthMesh);
+  scene.add(merMesh);
+  scene.add(nepMesh);
+  scene.add(uraMesh);
+  scene.add(satMesh);
+}
+function addAsteroids() {
+  for (var i = 0; i < 200; i++) {
+    var mtlLoader = new THREE.MTLLoader();
+    mtlLoader.setPath("asteroid-obj/");
+    mtlLoader.load("asteroid.mtl", function(materials) {
+      materials.preload();
+      var objLoader = new THREE.OBJLoader();
+      objLoader.setMaterials(materials);
+      objLoader.setPath("asteroid-obj/");
+      objLoader.load("asteroid.obj", function(object) {
+        // object.scale.x = 80;
+        // object.scale.y = 80;
+        // object.scale.z = 80;
+        object.position.x = Math.random() * 200 - 100;
+        object.position.y = Math.random() * 200 - 100;
+        object.position.z = Math.random() * 200 - 100;
+        astMesh.add(object);
+      });
+    });
+  }
+  scene.add(astMesh);
+}
+function addStarTrekShip() {
+  var mtlLoader = new THREE.MTLLoader();
+  mtlLoader.setPath("star-trek-sovereign-class-ussgeblendert-obj/");
+  mtlLoader.load("star-trek-sovereign-class-ussgeblendert.mtl", function(
+    materials
+  ) {
+    materials.preload();
+    var objLoader = new THREE.OBJLoader();
+    objLoader.setMaterials(materials);
+    objLoader.setPath("star-trek-sovereign-class-ussgeblendert-obj/");
+    objLoader.load("star-trek-sovereign-class-ussgeblendert.obj", function(
+      object
+    ) {
+      object.scale.x = 6;
+      object.scale.y = 6;
+      object.scale.z = 6;
+      object.rotation.y += Math.PI / 2;
+      starTrekMesh.add(object);
+      object.position.x = -60;
+      object.position.y = -40;
+      scene.add(starTrekMesh);
+    });
+  });
+}
+function addHeroShip() {
+  var mtlLoader = new THREE.MTLLoader();
+  mtlLoader.setPath("ship/");
+  mtlLoader.load("Wraith_Raider_Starship.mtl", function(materials) {
+    materials.preload();
+    var objLoader = new THREE.OBJLoader();
+    objLoader.setMaterials(materials);
+    objLoader.setPath("ship/");
+    objLoader.load("ship.obj", function(object) {
+      ship = object;
+      document.addEventListener("keydown", onDocumentKeyDown, false);
+      document.addEventListener("keyup", onDocumentKeyUp, false);
+      function onDocumentKeyUp(event) {
+        if (event.which === 39) {
+          heroObj.rotation.z = 0;
+          horMove = 0;
+        }
+        if (event.which === 37) {
+          horMove = 0;
+          heroObj.rotation.z = 0;
+        }
+        if (event.which === 40 || event.which === 38) {
+          verMove = 0;
+        }
+        if (event.which === 40) {
+          heroObj.rotation.x = 0.2;
+        }
+        if (event.which === 38) {
+          heroObj.rotation.x = 0.2;
+        }
+        if (event.which === 32) {
+          moveForward = false;
+        }
+      }
+      function onDocumentKeyDown(event) {
+        var keyCode = event.which;
+        if (keyCode == 32) {
+          moveForward = true;
+        }
+        var vector = new THREE.Vector3(); // create once and reuse it!
+        let direc = camera.getWorldDirection(vector);
+        if (keyCode == 39) {
+          horMove = 1;
+          heroObj.rotation.z = Math.PI / 6;
+        } else if (keyCode == 37) {
+          heroObj.rotation.z = -Math.PI / 6;
+          horMove = -1;
+        } else if (keyCode == 40) {
+          heroObj.rotation.x = -Math.PI / 8;
+          verMove = 1;
+        } else if (keyCode == 38) {
+          heroObj.rotation.x = Math.PI / 8;
+          verMove = -1;
+        }
+      }
+      heroObj = object;
+      objMesh.add(object);
+      object.scale.x = 0.001;
+      object.scale.y = 0.001;
+      object.scale.z = 0.001;
+      object.position.z = 0.7;
+      object.position.y = -0.2;
+      object.rotation.y = 135.1;
+      object.rotation.x = 0.2;
+      // scene2.add(object);
+      objMesh.position.z = 30;
+      objMesh.position.y = -10;
+      scene.add(objMesh);
+    });
+  });
+}
+animate();
+</script>
+	</body>
+</html>

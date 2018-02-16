@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset=utf-8>
+		<title>My first three.js app</title>
+		<style>
+			body { margin: 0 }
+			canvas { width: 100%; height: 100% }
+		</style>
+	</head>
+	<body>
+    <h1 id="userName"></h1>
+		<script src="js/three.js"></script>
+    <script src="js/OBJLoader.js"></script>
+		<script src="js/MTLLoader.js"></script>
+		<script src="js/OrbitControls.js"></script>
+			<script src='js/threex.planets.js'></script>
+			<script src='js/threex.spaceships-master/threex.spaceships.js'></script>
+    <script src="https://www.gstatic.com/firebasejs/4.9.1/firebase.js"></script>
+    <script>
+  // Initialize Firebase
+  var config = {
+    apiKey: "AIzaSyCW4-b4gmQOiCyGbM78PC00g9l2F3emA20",
+    authDomain: "spacedream-a14a6.firebaseapp.com",
+    databaseURL: "https://spacedream-a14a6.firebaseio.com",
+    projectId: "spacedream-a14a6",
+    storageBucket: "spacedream-a14a6.appspot.com",
+    messagingSenderId: "710867932394"
+  };
+  firebase.initializeApp(config);
+		// Our Javascript will go here.
+var scene = new THREE.Scene();
+let ship = 0;
+var heroHorMove = 0;
+var heroVerMove = 0;
+var heroSpeed = 0;
+var heroOnline = false;
+var heroObj;
+moveForward = false;
+var camera = new THREE.PerspectiveCamera(
+  75,
+  window.innerWidth / window.innerHeight,
+  0.1,
+  5000
+);
+var astMesh = new THREE.Mesh();
+var uraMesh = new THREE.Mesh();
+var satMesh = new THREE.Mesh();
+var merMesh = new THREE.Mesh();
+var venMesh = new THREE.Mesh();
+var objMesh = new THREE.Mesh();
+objMesh.add(camera);
+var starMesh;
+var userName = undefined;
+var starTrekMesh = new THREE.Mesh();
+var earthMesh = new THREE.Mesh();
+var nepMesh = new THREE.Mesh();
+addUniverse();
+addMainStar();
+addPlanets();
+addAsteroids();
+addStarTrekShip();
+getUserName();
+var allUserData;
+var userShipMeshArray = [];
+var usersOnlineArray= [];
+var usersMoveArray= [];
+var usersShipObjects= [];
+
+function adjustUserShips(){
+	if(userShipMeshArray !== [] && userShipMeshArray !== null){
+	userShipMeshArray.map((item,index)=>{
+		let dirVec = new THREE.Vector3(0, 0, -1);
+	  var direc = dirVec.applyQuaternion(userShipMeshArray[index].quaternion);
+	    rotObjectMatrix = new THREE.Matrix4();
+	    usersShipObjects[index].rotation.z = (Math.PI / 3) * usersMoveArray[index].horMove.value;
+	    usersShipObjects[index].rotation.x = (Math.PI / 3) * usersMoveArray[index].verMove.value;
+	    rotObjectMatrix.makeRotationY(-0.01 * usersMoveArray[index].horMove.value);
+	    userShipMeshArray[index].matrix.multiply(rotObjectMatrix);
+	    userShipMeshArray[index].rotation.setFromRotationMatrix(userShipMeshArray[index].matrix);
+	    rotObjectMatrix.makeRotationX(0.01 * usersMoveArray[index].verMove.value);
+	    userShipMeshArray[index].matrix.multiply(rotObjectMatrix);
+	    userShipMeshArray[index].rotation.setFromRotationMatrix(userShipMeshArray[index].matrix);
+	    userShipMeshArray[index].position.x += usersMoveArray[index].speed.value * 3 * direc.x;
+	    userShipMeshArray[index].position.y += usersMoveArray[index].speed.value * 3 * direc.y;
+	    userShipMeshArray[index].position.z += usersMoveArray[index].speed.value * 3 * direc.z;
+	});
+}
+}
+
+function addUserShip(currentRot, currentPos, userName){
+	console.log(userName);
+	usersOnlineArray.push(userName);
+	let userMesh = new THREE.Mesh();
+	var mtlLoader = new THREE.MTLLoader();
+	mtlLoader.setPath("ship/");
+	mtlLoader.load("Wraith_Raider_Starship.mtl", function(materials) {
+		materials.preload();
+		var objLoader = new THREE.OBJLoader();
+		objLoader.setMaterials(materials);
+		objLoader.setPath("ship/");
+		objLoader.load("ship.obj", function(object) {
+			userMesh.add(object);
+			usersShipObjects.push(object);
+			userMesh.rotation.x = currentRot.x;
+			userMesh.rotation.y = currentRot.y;
+			userMesh.rotation.z = currentRot.z;
+			userMesh.position.x = currentPos.x;
+			userMesh.position.y = currentPos.y;
+			userMesh.position.z = currentPos.z;
+			object.scale.x = 0.001;
+			object.scale.y = 0.001;
+			object.scale.z = 0.001;
+			object.position.z = 0.7;
+			object.position.y = -0.2;
+			object.rotation.y = 135.1;
+			object.rotation.x = 0.2;
+			userShipMeshArray.push(userMesh);
+			scene.add(userMesh);
+		});
+	});
+	// attach listener for the object movement
+	firebase
+  .database()
+  .ref("users/"+ userName)
+  .on("value", snapshot => {
+		if(snapshot !== undefined){
+			let value = snapshot.val();
+			let pointer = usersOnlineArray.indexOf(userName);
+			usersMoveArray[pointer] = {
+				horMove : value.horMove,
+				verMove: value.verMove,
+				speed: value.speed
+			}
+			firebase
+			.database()
+			.ref("users/" + userName + "/currentRot/")
+			.set({
+				x: userShipMeshArray[pointer].rotation.x,
+				y: userShipMeshArray[pointer].rotation.y,
+				z: userShipMeshArray[pointer].rotation.z
+			});
+			firebase
+			.database()
+			.ref("users/" + userName + "/currentPos/")
+			.set({
+				x: userShipMeshArray[pointer].position.x,
+				y: userShipMeshArray[pointer].position.y,
+				z: userShipMeshArray[pointer].position.z
+			});
+		}
+	});
+}
+
+function removeUserShip(userName){
+	let pointer = usersOnlineArray.indexOf(userName);
+	scene.remove(userShipMeshArray[pointer]);
+	userShipMeshArray.splice(pointer,1);
+	usersMoveArray.splice(pointer,1);
+	usersOnlineArray.splice(pointer,1);
+	usersShipObjects.splice(pointer,1);
+	firebase
+  .database()
+  .ref("users/"+ userName)
+  .off();
+}
+
+function renderOtherOnlineUsers(){
+	firebase
+  .database()
+  .ref("users/")
+  .on("value", snapshot => {
+		if(snapshot !== null){
+			allUserData = snapshot.val();
+			Object.keys(allUserData).map((item,index)=>{
+				if(allUserData[item].online.value && item !== userName){
+					usersOnlineArray.includes(item) ? null : addUserShip(allUserData[item].currentRot,allUserData[item].currentPos, item)
+				}
+				else if(!allUserData[item].online.value && item !== userName){
+					usersOnlineArray.includes(item) ? removeUserShip(item) : null
+				}
+			});
+		}
+	});
+}
+
+function getUserName() {
+  // prompt for username
+  // if username exists :- use currentRot and currentPos values to render and attach listener for moves
+  // attach camera here
+  userName = prompt("Please enter your name");
+  userName === null ? getUserName() : null;
+  userName === "" ? getUserName() : null;
+	renderOtherOnlineUsers();
+  document.getElementById("userName").innerHTML = userName;
+  firebase
+  .database()
+  .ref("users/" + userName)
+  .once("value", snapshot => {
+    if (snapshot.val() == null) {
+      // user does not exist, create one
+      firebase
+      .database()
+      .ref("users/" + userName)
+      .set({
+        online : false,
+        currentRot : {
+          x: 0,
+          y: 0,
+          z: 0
+        },
+        currentPos : {
+          x: 0,
+          y: 0,
+          z: 0
+        },
+        horMove: {value : 0},
+        verMove: {value : 0},
+        speed: {value : 0}
+      });
+      addHeroShip();
+      addHeroMoveListener(userName);
+    }
+    else if(snapshot !== undefined){
+      firebase
+              .database()
+              .ref("users/" + userName + "/speed/")
+              .set({
+                value: 0
+              });
+            firebase
+              .database()
+              .ref("users/" + userName + "/horMove/")
+              .set({
+                value: 0
+              });
+            firebase
+              .database()
+              .ref("users/" + userName + "/verMove/")
+              .set({
+                value: 0
+              });
+      addHeroShip();
+      addHeroMoveListener(userName);
+    }
+  });
+}
+
+function addHeroShip(){
+    var mtlLoader = new THREE.MTLLoader();
+    mtlLoader.setPath("ship/");
+    mtlLoader.load("Wraith_Raider_Starship.mtl", function(materials) {
+      materials.preload();
+      var objLoader = new THREE.OBJLoader();
+      objLoader.setMaterials(materials);
+      objLoader.setPath("ship/");
+      objLoader.load("ship.obj", function(object) {
+        heroObj = object;
+        objMesh.add(object);
+        object.scale.x = 0.001;
+        object.scale.y = 0.001;
+        object.scale.z = 0.001;
+        object.position.z = 0.7;
+        object.position.y = -0.2;
+        object.rotation.y = 135.1;
+        object.rotation.x = 0.2;
+        objMesh.position.z = 30;
+        objMesh.position.y = -10;
+        scene.add(objMesh);
+      });
+    });
+}
+function addHeroMoveListener(userName){
+  firebase
+  .database()
+  .ref("users/" + userName)
+  .on("value", snapshot => {
+    if(snapshot !== null){
+      heroHorMove = snapshot.val().horMove ? snapshot.val().horMove.value : 0;
+      heroVerMove = snapshot.val().verMove ? snapshot.val().verMove.value : 0;
+      heroSpeed = snapshot.val().speed ? snapshot.val().speed.value : 0;
+      heroOnline = snapshot.val().online ? snapshot.val().online : false;
+			firebase
+			.database()
+			.ref("users/" + userName + "/currentRot/")
+			.set({
+				x: objMesh.rotation.x,
+				y: objMesh.rotation.y,
+				z: objMesh.rotation.z
+			});
+			firebase
+			.database()
+			.ref("users/" + userName + "/currentPos/")
+			.set({
+				x: objMesh.position.x,
+				y: objMesh.position.y,
+				z: objMesh.position.z
+			});
+    }
+	});
+}
+function adjustHeroShip(heroHorMove, heroVerMove, heroSpeed) {
+  let dirVec = new THREE.Vector3(0, 0, -1);
+  var direc = dirVec.applyQuaternion(objMesh.quaternion);
+    rotObjectMatrix = new THREE.Matrix4();
+    heroObj.rotation.z = Math.PI / 3 * heroHorMove;
+    heroObj.rotation.x = Math.PI / 3 * heroVerMove;
+    rotObjectMatrix.makeRotationY(-0.01 * heroHorMove);
+    objMesh.matrix.multiply(rotObjectMatrix);
+    objMesh.rotation.setFromRotationMatrix(objMesh.matrix);
+    rotObjectMatrix.makeRotationX(0.01 * heroVerMove);
+    objMesh.matrix.multiply(rotObjectMatrix);
+    objMesh.rotation.setFromRotationMatrix(objMesh.matrix);
+    objMesh.position.x += heroSpeed * 3 * direc.x;
+    objMesh.position.y += heroSpeed * 3 * direc.y;
+    objMesh.position.z += heroSpeed * 3 * direc.z;
+}
+
+var renderer = new THREE.WebGLRenderer();
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+// scene.add(camera);
+
+camera.position.z = 1.5;
+camera.position.y = 0;
+var orbitControl = new THREE.OrbitControls(camera, renderer.domElement); //helper to rotate around in scene
+
+function addUniverse() {
+  var universeSphere = new THREE.SphereGeometry(500, 32, 32);
+  var uniTexture = THREE.ImageUtils.loadTexture(
+    "./images/galaxy_starfield.png"
+  );
+  uniTexture.wrapS = uniTexture.wrapT = THREE.RepeatWrapping;
+  uniTexture.magFilter = THREE.NearestFilter;
+  uniTexture.minFilter = THREE.LinearMipMapLinearFilter;
+  uniTexture.repeat.set(2, 2);
+  var uniMaterial = new THREE.MeshBasicMaterial({
+    map: uniTexture,
+    side: THREE.DoubleSide
+  });
+  var uniMesh = new THREE.Mesh(universeSphere, uniMaterial);
+  scene.add(uniMesh);
+}
+var animate = function() {
+  requestAnimationFrame(animate);
+  astMesh.rotation.y += 0.005;
+  astMesh.rotation.x += 0.001;
+  starTrekMesh.rotation.y -= 0.005;
+  satMesh.rotation.y += 0.005;
+  satMesh.rotation.x += 0.005;
+  merMesh.rotation.y += 0.005;
+  merMesh.rotation.x += 0.005;
+  uraMesh.rotation.y += 0.03;
+  uraMesh.rotation.x += 0.03;
+  earthMesh.rotation.y += 0.008;
+  earthMesh.rotation.x += 0.008;
+
+  venMesh.rotation.y += 0.008;
+  venMesh.rotation.x += 0.008;
+  nepMesh.rotation.y += 0.012;
+  nepMesh.rotation.x += 0.012;
+  heroObj ? adjustHeroShip(heroHorMove, heroVerMove, heroSpeed) : null;
+	adjustUserShips();
+  renderer.render(scene, camera);
+};
+function addMainStar() {
+  var starGeometry = new THREE.SphereGeometry(20, 32, 32);
+  let starLight = new THREE.PointLight(0xffee88, 3, 0);
+  starMat = new THREE.MeshStandardMaterial({
+    emissive: 0xffffee,
+    emissiveIntensity: 1,
+    color: 0x0064000
+  });
+  starMesh = new THREE.Mesh(starGeometry, starMat);
+  starMesh.add(starLight);
+  starMesh.position.set(0, 0, 0);
+  starLight.castShadow = true;
+  scene.add(starMesh);
+}
+function addPlanets() {
+  var uranus = THREEx.Planets.createUranus();
+  uranus.scale.x = 0.005;
+  uranus.scale.y = 0.005;
+  uranus.scale.z = 0.005;
+  var saturn = THREEx.Planets.createSaturn();
+  saturn.scale.x = 0.005;
+  saturn.scale.y = 0.005;
+  saturn.scale.z = 0.005;
+  var earth = THREEx.Planets.createEarth();
+  earth.scale.x = 0.03;
+  earth.scale.y = 0.03;
+  earth.scale.z = 0.03;
+  var neptune = THREEx.Planets.createNeptune();
+  var mercury = THREEx.Planets.createMercury();
+  var venus = THREEx.Planets.createVenus();
+  venus.scale.x = 10;
+  venus.scale.y = 10;
+  venus.scale.z = 10;
+  mercury.scale.x = 30;
+  mercury.scale.y = 30;
+  mercury.scale.z = 30;
+  merMesh.add(mercury);
+  neptune.scale.x = 30;
+  neptune.scale.y = 30;
+  neptune.scale.z = 30;
+  saturn.position.x = 50;
+  saturn.position.y = 50;
+  saturn.position.z = 50;
+  uranus.position.y = 30;
+  uranus.position.x = -30;
+  uranus.position.z = 30;
+  earth.position.y = 70;
+  earth.position.x = -70;
+  earth.position.z = -70;
+  venus.position.y = -85;
+  venus.position.x = -85;
+  venus.position.z = 85;
+  neptune.position.y = -100;
+  neptune.position.x = 100;
+  neptune.position.z = -100;
+
+  mercury.position.y = -60;
+  mercury.position.x = 60;
+  mercury.position.z = -60;
+  nepMesh.add(neptune);
+  venMesh.add(venus);
+  scene.add(venMesh);
+  earthMesh.add(earth);
+  uraMesh.add(uranus);
+  satMesh.add(saturn);
+  scene.add(earthMesh);
+  scene.add(merMesh);
+  scene.add(nepMesh);
+  scene.add(uraMesh);
+  scene.add(satMesh);
+}
+function addAsteroids() {
+  for (var i = 0; i < 200; i++) {
+    var mtlLoader = new THREE.MTLLoader();
+    mtlLoader.setPath("asteroid-obj/");
+    mtlLoader.load("asteroid.mtl", function(materials) {
+      materials.preload();
+      var objLoader = new THREE.OBJLoader();
+      objLoader.setMaterials(materials);
+      objLoader.setPath("asteroid-obj/");
+      objLoader.load("asteroid.obj", function(object) {
+        object.position.x = Math.random() * 200 - 100;
+        object.position.y = Math.random() * 200 - 100;
+        object.position.z = Math.random() * 200 - 100;
+        astMesh.add(object);
+      });
+    });
+  }
+  scene.add(astMesh);
+}
+function addStarTrekShip() {
+  var mtlLoader = new THREE.MTLLoader();
+  mtlLoader.setPath("star-trek-sovereign-class-ussgeblendert-obj/");
+  mtlLoader.load("star-trek-sovereign-class-ussgeblendert.mtl", function(
+    materials
+  ) {
+    materials.preload();
+    var objLoader = new THREE.OBJLoader();
+    objLoader.setMaterials(materials);
+    objLoader.setPath("star-trek-sovereign-class-ussgeblendert-obj/");
+    objLoader.load("star-trek-sovereign-class-ussgeblendert.obj", function(
+      object
+    ) {
+      object.scale.x = 6;
+      object.scale.y = 6;
+      object.scale.z = 6;
+      object.rotation.y += Math.PI / 2;
+      starTrekMesh.add(object);
+      object.position.x = -60;
+      object.position.y = -40;
+      scene.add(starTrekMesh);
+    });
+  });
+}
+animate();
+</script>
+	</body>
+</html>
