@@ -4,7 +4,8 @@
 Clone the project, navigate to project root through terminal. <br />
 Run the command :- <br />
 <code>php -S 127.0.0.1:8080</code> <br />
-This will start the local server, go to http://127.0.0.1:8080/ through browser, <br />
+This will start the local server, go to http://127.0.0.1:8080/,
+checkout enhanced version at http://127.0.0.1:8080/EnhancedSpaceDream through browser, <br />
 Fill username and let the experience load. <br />
 
 ## Get Mobile Remote
