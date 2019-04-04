@@ -283,33 +283,34 @@ function addHeroShip(){
     });
 }
 function addHeroMoveListener(userName){
-  firebase
-  .database()
-  .ref("users/" + userName)
-  .on("value", snapshot => {
-    if(snapshot !== null){
-      heroHorMove = snapshot.val().horMove ? snapshot.val().horMove.value : 0;
-      heroVerMove = snapshot.val().verMove ? snapshot.val().verMove.value : 0;
-      heroSpeed = snapshot.val().speed ? snapshot.val().speed.value : 0;
-      heroOnline = snapshot.val().online ? snapshot.val().online : false;
-			firebase
-			.database()
-			.ref("users/" + userName + "/currentRot/")
-			.set({
-				x: objMesh.rotation.x,
-				y: objMesh.rotation.y,
-				z: objMesh.rotation.z
-			});
-			firebase
-			.database()
-			.ref("users/" + userName + "/currentPos/")
-			.set({
-				x: objMesh.position.x,
-				y: objMesh.position.y,
-				z: objMesh.position.z
-			});
-    }
-	});
+  // firebase
+  // .database()
+  // .ref("users/" + userName)
+  // .on("value", snapshot => {
+  //   if(snapshot !== null){
+  //     heroHorMove = snapshot.val().horMove ? snapshot.val().horMove.value : 0;
+  //     heroVerMove = snapshot.val().verMove ? snapshot.val().verMove.value : 0;
+  //     heroSpeed = snapshot.val().speed ? snapshot.val().speed.value : 0;
+  //     heroOnline = snapshot.val().online ? snapshot.val().online : false;
+	// 		firebase
+	// 		.database()
+	// 		.ref("users/" + userName + "/currentRot/")
+	// 		.set({
+	// 			x: objMesh.rotation.x,
+	// 			y: objMesh.rotation.y,
+	// 			z: objMesh.rotation.z
+	// 		});
+	// 		firebase
+	// 		.database()
+	// 		.ref("users/" + userName + "/currentPos/")
+	// 		.set({
+	// 			x: objMesh.position.x,
+	// 			y: objMesh.position.y,
+	// 			z: objMesh.position.z
+	// 		});
+  //   }
+	// });
+  document.onkeydown((e) => console.log(e))
 }
 function adjustHeroShip(heroHorMove, heroVerMove, heroSpeed) {
   let dirVec = new THREE.Vector3(0, 0, -1);
