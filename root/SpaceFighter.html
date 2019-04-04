@@ -7,10 +7,10 @@
 		</style>
 	</head>
 	<body>
-        <script src="js/three.js"></script>
-<script src="js/OrbitControls.js"></script>
-<script src="js/OBJLoader.js"></script>
-<script src="js/MTLLoader.js"></script>
+        <script src="../js/three.js"></script>
+<script src="../js/OrbitControls.js"></script>
+<script src="../js/OBJLoader.js"></script>
+<script src="../js/MTLLoader.js"></script>
 		<script>
 var heroMesh = new THREE.Mesh();
             function createObject(objBase, objPath, mtlBase, mtlPath, callback) {
@@ -29,7 +29,7 @@ var heroMesh = new THREE.Mesh();
             function addUniverse() {
                 var universeSphere = new THREE.SphereGeometry(1000, 32, 32);
                 var uniTexture = THREE.ImageUtils.loadTexture(
-                    "./images/galaxy_starfield.png"
+                    "../images/galaxy_starfield.png"
                 );
                 uniTexture.wrapS = uniTexture.wrapT = THREE.RepeatWrapping;
                 uniTexture.magFilter = THREE.NearestFilter;
